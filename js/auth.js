@@ -7,7 +7,7 @@
  */
 
 // 🌐 CONFIGURACIÓN DEL BACKEND
-const API_URL = 'https://smartbank-backend-lcnr.onrender.com'; // ← CAMBIA ESTO por tu URL de Render
+const API_URL = 'https://smartbank-mi-app.onrender.com'; // ← CAMBIA ESTO por tu URL de Render
 
 // 📦 CLASE PRINCIPAL DE AUTENTICACIÓN
 class AuthSystem {
