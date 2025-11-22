@@ -1,134 +1,78 @@
+/**
+ * 🔐 Sistema de Autenticación Completo para Smart/Bank
+ * ✅ Conexión real con backend
+ * ✅ JWT tokens
+ * ✅ Cierre de sesión
+ * ✅ Recordar usuario
+ */
+
+// 🌐 CONFIGURACIÓN DEL BACKEND
+const API_URL = 'https://smartbank-backend-lcnr.onrender.com'; // ← CAMBIA ESTO por tu URL de Render
+
+// 📦 CLASE PRINCIPAL DE AUTENTICACIÓN
 class AuthSystem {
   constructor() {
     this.currentUser = null;
-    this.users = this.loadUsers();
-    this.sessionTimeout = 30 * 60 * 1000; // 30 minutos
+    this.token = localStorage.getItem('token');
     this.init();
   }
 
+  // 🚀 INICIALIZAR SISTEMA
   init() {
     try {
-      const savedUser = this.getStoredUser();
-      if (savedUser && this.isSessionValid(savedUser)) {
-        this.currentUser = savedUser;
-        this.updateUI();
-        this.redirectToDashboard();
-      } else {
-        this.clearStoredUser();
+      // Si hay token, verificar usuario
+      if (this.token) {
+        this.verifyToken();
       }
+      
+      // Configurar eventos
       this.setupEventListeners();
-      this.setupSessionManagement();
+      
+      // Verificar autenticación en páginas protegidas
+      if (!window.location.pathname.includes('login') && 
+          !window.location.pathname.includes('register') && 
+          !this.token) {
+        this.redirectToLogin();
+      }
     } catch (error) {
-      console.error('Error al inicializar AuthSystem:', error);
+      console.error('❌ Error al inicializar AuthSystem:', error);
       this.showError('Error al inicializar el sistema de autenticación');
     }
   }
 
+  // 🎯 CONFIGURAR EVENTOS
   setupEventListeners() {
+    // Formulario de login
     const loginForm = document.getElementById('loginForm');
-    const registerForm = document.getElementById('registerForm');
-    
     if (loginForm) {
       loginForm.addEventListener('submit', (e) => this.handleLogin(e));
     }
-    
+
+    // Formulario de registro
+    const registerForm = document.getElementById('registerForm');
     if (registerForm) {
       registerForm.addEventListener('submit', (e) => this.handleRegister(e));
     }
-  }
 
-  setupSessionManagement() {
-    setInterval(() => {
-      if (this.currentUser && !this.isSessionValid(this.currentUser)) {
-        this.logout('Sesión expirada por inactividad');
-      }
-    }, 60000);
-
-    document.addEventListener('click', () => this.updateActivity());
-    document.addEventListener('keypress', () => this.updateActivity());
-  }
-
-  updateActivity() {
-    if (this.currentUser) {
-      this.currentUser.lastActivity = Date.now();
-      this.storeUser(this.currentUser);
+    // Botón de cerrar sesión
+    const logoutBtn = document.querySelector('.logout-button');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', () => this.logout());
     }
+
+    // Verificar contraseña en tiempo real
+    this.setupPasswordValidation();
   }
 
-  isSessionValid(user) {
-    return user.lastActivity && (Date.now() - user.lastActivity) < this.sessionTimeout;
-  }
-
-  loadUsers() {
-    try {
-      const saved = localStorage.getItem('smartBankUsers');
-      return saved ? JSON.parse(saved).map(u => this.migrateUser(u)) : this.getDefaultUsers();
-    } catch {
-      return this.getDefaultUsers();
-    }
-  }
-
-  migrateUser(user) {
-    return {
-      ...user,
-      createdAt: user.createdAt || new Date().toISOString(),
-      lastLogin: user.lastLogin || null,
-      failedAttempts: user.failedAttempts || 0,
-      lockedUntil: user.lockedUntil || null,
-      twoFactorEnabled: user.twoFactorEnabled || false,
-      preferences: user.preferences || {
-        language: 'es',
-        currency: 'USD',
-        theme: 'light',
-        notifications: true
-      }
-    };
-  }
-
-  getDefaultUsers() {
-    return [
-      {
-        id: 1,
-        firstName: 'Juan',
-        lastName: 'Pérez',
-        email: 'juan@email.com',
-        password: this.hashPassword('123456'),
-        phone: '+1234567890',
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-        failedAttempts: 0,
-        lockedUntil: null,
-        twoFactorEnabled: false,
-        preferences: {
-          language: 'es',
-          currency: 'USD',
-          theme: 'light',
-          notifications: true
-        }
-      }
-    ];
-  }
-
-  hashPassword(password, salt = this.generateSalt()) {
-    return btoa(password + salt) + ':' + salt;
-  }
-
-  generateSalt() {
-    return Math.random().toString(36).substring(2, 15);
-  }
-
-  verifyPassword(password, hashedPassword) {
-    const [hash, salt] = hashedPassword.split(':');
-    return this.hashPassword(password, salt) === hashedPassword;
-  }
-
+  // 🔑 LOGIN
   async handleLogin(e) {
     e.preventDefault();
     
-    const email = document.getElementById('email').value.trim().toLowerCase();
-    const password = document.getElementById('password').value;
+    const email = document.getElementById('email')?.value.trim().toLowerCase();
+    const password = document.getElementById('password')?.value;
     const rememberMe = document.getElementById('rememberMe')?.checked || false;
 
+    // Validaciones
     if (!email || !password) {
       this.showError('Por favor completa todos los campos');
       return;
@@ -139,27 +83,51 @@ class AuthSystem {
       return;
     }
 
-    const user = this.users.find(u => u.email === email);
+    try {
+      this.showLoading('Iniciando sesión...');
 
-    if (!user) {
-      this.showError('Credenciales inválidas');
-      return;
+      const response = await fetch(`${API_URL}/api/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Éxito ✅
+        this.token = data.token;
+        
+        if (rememberMe) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+        } else {
+          sessionStorage.setItem('token', data.token);
+          sessionStorage.setItem('user', JSON.stringify(data.user));
+        }
+
+        this.showSuccess('¡Bienvenido! Redirigiendo...');
+        
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 1000);
+
+      } else {
+        // Error ❌
+        this.showError(data.error || 'Credenciales inválidas');
+      }
+
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      this.showError('Error de conexión con el servidor');
+    } finally {
+      this.hideLoading();
     }
-
-    if (user.lockedUntil && new Date(user.lockedUntil) > new Date()) {
-      this.showError('Cuenta bloqueada temporalmente. Intenta más tarde.');
-      return;
-    }
-
-    if (!this.verifyPassword(password, user.password)) {
-      this.showError('Credenciales inválidas');
-      this.logFailedAttempt(user);
-      return;
-    }
-
-    await this.successfulLogin(user, rememberMe);
   }
 
+  // 📝 REGISTRO
   async handleRegister(e) {
     e.preventDefault();
     
@@ -167,43 +135,40 @@ class AuthSystem {
       const userData = this.validateRegistrationData();
       if (!userData) return;
 
-      if (this.users.find(u => u.email === userData.email)) {
-        this.showError('Este correo ya está registrado');
-        return;
+      this.showLoading('Creando cuenta...');
+
+      const response = await fetch(`${API_URL}/api/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData)
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Éxito ✅
+        this.showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
+        
+        setTimeout(() => {
+          window.location.href = 'login.html';
+        }, 1500);
+
+      } else {
+        // Error ❌
+        this.showError(data.error || 'Error al crear cuenta');
       }
 
-      const newUser = {
-        id: Date.now(),
-        ...userData,
-        password: this.hashPassword(userData.password),
-        createdAt: new Date().toISOString(),
-        lastLogin: null,
-        failedAttempts: 0,
-        lockedUntil: null,
-        twoFactorEnabled: false,
-        preferences: {
-          language: 'es',
-          currency: 'USD',
-          theme: 'light',
-          notifications: true
-        }
-      };
-
-      this.users.push(newUser);
-      this.saveUsers();
-      
-      this.showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
-      
-      setTimeout(() => {
-        this.successfulLogin(newUser, false);
-      }, 1500);
-
     } catch (error) {
-      console.error('Error en registro:', error);
-      this.showError('Ocurrió un error al registrar la cuenta');
+      console.error('❌ Error en registro:', error);
+      this.showError('Error de conexión con el servidor');
+    } finally {
+      this.hideLoading();
     }
   }
 
+  // ✅ VALIDAR DATOS DE REGISTRO
   validateRegistrationData() {
     const firstName = document.getElementById('firstName')?.value.trim() || '';
     const lastName = document.getElementById('lastName')?.value.trim() || '';
@@ -213,6 +178,7 @@ class AuthSystem {
     const confirmPassword = document.getElementById('confirmPassword')?.value || '';
     const termsAccepted = document.getElementById('termsAccepted')?.checked || false;
 
+    // Validaciones
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
       this.showError('Por favor completa todos los campos obligatorios');
       return null;
@@ -248,200 +214,159 @@ class AuthSystem {
     };
   }
 
-  async successfulLogin(user, rememberMe) {
-    user.failedAttempts = 0;
-    user.lockedUntil = null;
-    user.lastLogin = new Date().toISOString();
-    user.lastActivity = Date.now();
-
-    this.currentUser = user;
-    this.storeUser(user, rememberMe);
-    this.saveUsers();
-    this.initializeUserData(user.id);
-
-    this.showSuccess(`¡Bienvenido ${user.firstName}!`);
-
-    setTimeout(() => {
-      this.redirectToDashboard();
-    }, 1000);
-  }
-
-  logFailedAttempt(user) {
-    user.failedAttempts = (user.failedAttempts || 0) + 1;
-    if (user.failedAttempts >= 5) {
-      user.lockedUntil = new Date(Date.now() + 15 * 60 * 1000).toISOString();
-      this.showError('Cuenta bloqueada por 15 minutos por múltiples intentos fallidos');
-    }
-    this.saveUsers();
-  }
-
-  initializeUserData(userId) {
-    const userDataKey = `userData_${userId}`;
-    if (!localStorage.getItem(userDataKey)) {
-      const initialData = {
-        transactions: [
-          {
-            id: 1,
-            type: 'income',
-            amount: 5000,
-            category: 'Salario',
-            description: 'Salario Mensual',
-            date: new Date().toISOString().split('T')[0],
-            status: 'completed',
-            location: 'Transferencia Bancaria',
-            time: '08:00',
-            method: 'Transferencia',
-            bankId: 1,
-            notes: ''
-          },
-          {
-            id: 2,
-            type: 'expense',
-            amount: 1200,
-            category: 'Vivienda',
-            description: 'Alquiler',
-            date: new Date().toISOString().split('T')[0],
-            status: 'completed',
-            location: 'Pago Bancario',
-            time: '09:00',
-            method: 'Débito Automático',
-            bankId: 1,
-            notes: ''
-          }
-        ],
-        categories: [
-          { id: 1, name: 'Alimentación', budget: 500, spent: 0, color: '#3B82F6', icon: '🍽️' },
-          { id: 2, name: 'Transporte', budget: 300, spent: 0, color: '#60A5FA', icon: '🚗' },
-          { id: 3, name: 'Vivienda', budget: 1200, spent: 1200, color: '#93C5FD', icon: '🏠' },
-          { id: 4, name: 'Ocio', budget: 200, spent: 0, color: '#BFDBFE', icon: '🎬' },
-          { id: 5, name: 'Salud', budget: 150, spent: 0, color: '#10B981', icon: '⚕️' },
-          { id: 6, name: 'Educación', budget: 100, spent: 0, color: '#F59E0B', icon: '📚' }
-        ],
-        subscriptions: [
-          {
-            id: 1,
-            name: 'Netflix',
-            price: 15.99,
-            billingCycle: 'monthly',
-            nextPayment: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-            active: true,
-            icon: '🎬',
-            color: '#E50914'
-          }
-        ],
-        banks: [
-          {
-            id: 1,
-            name: 'Banco Principal',
-            type: 'checking',
-            balance: 5000,
-            accountNumber: '****1234',
-            currency: 'USD',
-            color: '#3B82F6',
-            isActive: true,
-            createdAt: new Date().toISOString()
-          }
-        ],
-        settings: {
-          language: 'es',
-          currency: 'USD',
-          savingsGoal: 20,
-          emergencyFund: 10000,
-          notifications: {
-            budgetAlerts: true,
-            monthlyReports: true,
-            goalReminders: false
-          }
+  // 🔐 VERIFICAR TOKEN
+  async verifyToken() {
+    try {
+      const response = await fetch(`${API_URL}/api/verify`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${this.token}`
         }
-      };
-      localStorage.setItem(userDataKey, JSON.stringify(initialData));
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.currentUser = data.user;
+        this.updateUI();
+      } else {
+        // Token inválido o expirado
+        this.logout();
+      }
+    } catch (error) {
+      console.error('❌ Error verificando token:', error);
+      this.logout();
     }
   }
 
+  // 📧 VALIDAR EMAIL
   validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   }
 
-  getStoredUser() {
+  // 🔒 CERRAR SESIÓN
+  logout(message = null) {
     try {
-      return JSON.parse(localStorage.getItem('currentUser') || sessionStorage.getItem('currentUser') || 'null');
-    } catch {
-      return null;
-    }
-  }
-
-  storeUser(user, rememberMe = false) {
-    try {
-      const storage = rememberMe ? localStorage : sessionStorage;
-      storage.setItem('currentUser', JSON.stringify(user));
-      if (rememberMe) sessionStorage.removeItem('currentUser');
-      else localStorage.removeItem('currentUser');
-    } catch (error) {
-      console.error('Error al almacenar usuario:', error);
-    }
-  }
-
-  clearStoredUser() {
-    localStorage.removeItem('currentUser');
-    sessionStorage.removeItem('currentUser');
-  }
-
-  saveUsers() {
-    try {
-      localStorage.setItem('smartBankUsers', JSON.stringify(this.users));
-    } catch (error) {
-      console.error('Error al guardar usuarios:', error);
-    }
-  }
-
-  logout(reason = null) {
-    try {
-      if (this.currentUser) {
-        console.log(`Sesión cerrada para ${this.currentUser.email}${reason ? `: ${reason}` : ''}`);
-      }
+      // Limpiar almacenamiento
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('user');
       
+      this.token = null;
       this.currentUser = null;
-      this.clearStoredUser();
-      window.location.href = 'login.html';
+
+      console.log('👋 Sesión cerrada' + (message ? `: ${message}` : ''));
+      
+      // Redirigir al login
+      if (!window.location.pathname.includes('login')) {
+        window.location.href = 'login.html';
+      }
     } catch (error) {
-      console.error('Error al cerrar sesión:', error);
+      console.error('❌ Error al cerrar sesión:', error);
     }
   }
 
-  redirectToDashboard() {
-    if (!window.location.pathname.includes('dashboard.html')) {
-      window.location.href = 'dashboard.html';
-    }
+  // 🔀 REDIRECCIONAR
+  redirectToLogin() {
+    window.location.href = 'login.html';
   }
 
-  getCurrentUser() {
-    return this.currentUser || this.getStoredUser();
-  }
-
+  // 🎨 ACTUALIZAR UI
   updateUI() {
     if (!this.currentUser) return;
 
+    // Actualizar nombre y email en la UI
     const userNameElement = document.getElementById('userName');
     const userEmailElement = document.getElementById('userEmail');
     const userInitialsElement = document.getElementById('userInitials');
 
-    if (userNameElement) userNameElement.textContent = `${this.currentUser.firstName} ${this.currentUser.lastName}`;
+    if (userNameElement) userNameElement.textContent = this.currentUser.name;
     if (userEmailElement) userEmailElement.textContent = this.currentUser.email;
     if (userInitialsElement) {
-      userInitialsElement.textContent = `${this.currentUser.firstName[0]}${this.currentUser.lastName[0]}`;
+      const initials = this.currentUser.name.split(' ').map(n => n[0]).join('');
+      userInitialsElement.textContent = initials;
     }
   }
 
-  showError(message) {
-    alert(message); // Simplificado para este entorno
+  // 🔍 VALIDAR CONTRASEÑA EN TIEMPO REAL
+  setupPasswordValidation() {
+    const passwordInput = document.getElementById('password');
+    const strengthDiv = document.getElementById('passwordStrength');
+    
+    if (!passwordInput || !strengthDiv) return;
+
+    passwordInput.addEventListener('input', (e) => {
+      const password = e.target.value;
+      const strength = this.calculatePasswordStrength(password);
+      this.updatePasswordStrengthUI(strength, strengthDiv);
+    });
   }
 
+  // 💪 CALCULAR FORTALEZA DE CONTRASEÑA
+  calculatePasswordStrength(password) {
+    let strength = 0;
+    
+    if (password.length >= 8) strength++;
+    if (password.length >= 12) strength++;
+    if (/[a-z]/.test(password)) strength++;
+    if (/[A-Z]/.test(password)) strength++;
+    if (/[0-9]/.test(password)) strength++;
+    if (/[^A-Za-z0-9]/.test(password)) strength++;
+    
+    return Math.min(strength, 5);
+  }
+
+  // 🎨 ACTUALIZAR UI DE FORTALEZA
+  updatePasswordStrengthUI(strength, container) {
+    const labels = ['Muy débil', 'Débil', 'Media', 'Fuerte', 'Muy fuerte'];
+    const colors = ['#EF4444', '#F59E0B', '#F59E0B', '#10B981', '#059669'];
+    
+    container.innerHTML = `
+      <div class="password-strength-meter">
+        <div class="strength-bar">
+          <div class="strength-fill" style="width: ${(strength + 1) * 20}%; background-color: ${colors[strength]}"></div>
+        </div>
+        <span class="strength-text">${labels[strength]}</span>
+      </div>
+    `;
+  }
+
+  // ⏳ MOSTRAR CARGANDO
+  showLoading(message = 'Cargando...') {
+    const button = document.querySelector('.login-button .button-text');
+    const loader = document.querySelector('.login-button .button-loader');
+    
+    if (button) button.style.display = 'none';
+    if (loader) loader.style.display = 'inline';
+    
+    if (button) button.textContent = message;
+  }
+
+  // ✅ OCULTAR CARGANDO
+  hideLoading() {
+    const button = document.querySelector('.login-button .button-text');
+    const loader = document.querySelector('.login-button .button-loader');
+    
+    if (loader) loader.style.display = 'none';
+    if (button) {
+      button.style.display = 'inline';
+      button.textContent = 'Iniciar Sesión';
+    }
+  }
+
+  // ❌ MOSTRAR ERROR
+  showError(message) {
+    alert(`❌ ${message}`); // Simplificado para producción básica
+  }
+
+  // ✅ MOSTRAR ÉXITO
   showSuccess(message) {
-    alert(message); // Simplificado para este entorno
+    alert(`✅ ${message}`); // Simplificado para producción básica
   }
 }
 
+// 🌟 FUNCIONES GLOBALES
 function logout() {
   if (window.authSystem) {
     window.authSystem.logout();
@@ -453,7 +378,7 @@ function logout() {
 function checkAuth() {
   try {
     const auth = new AuthSystem();
-    const user = auth.getCurrentUser();
+    const user = auth.currentUser || JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null');
     
     if (!user && !window.location.pathname.includes('login') && !window.location.pathname.includes('register')) {
       window.location.href = 'login.html';
@@ -462,20 +387,17 @@ function checkAuth() {
     
     return user;
   } catch (error) {
-    console.error('Error en checkAuth:', error);
+    console.error('❌ Error en checkAuth:', error);
     window.location.href = 'login.html';
     return null;
   }
 }
 
+// 🚀 INICIALIZAR CUANDO SE CARGUE LA PÁGINA
 document.addEventListener('DOMContentLoaded', function () {
   try {
     window.authSystem = new AuthSystem();
-    
-    if (!window.location.pathname.includes('login') && !window.location.pathname.includes('register')) {
-      checkAuth();
-    }
   } catch (error) {
-    console.error('Error al inicializar la aplicación:', error);
+    console.error('❌ Error al inicializar la aplicación:', error);
   }
 });
