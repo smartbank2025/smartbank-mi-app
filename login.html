@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart/Bank - Iniciar Sesión</title>
+  <link rel="stylesheet" href="login.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-section">
+        <div class="logo">
+          <div class="logo-icon">$</div>
+        </div>
+        <h1 class="app-name">Smart/Bank</h1>
+        <p class="app-subtitle">Tu gestión financiera inteligente</p>
+      </div>
+
+      <form id="loginForm" class="login-form" novalidate>
+        <div class="form-group">
+          <label for="email" class="form-label">Correo Electrónico</label>
+          <input type="email" id="email" class="form-input" placeholder="tu@email.com" required aria-required="true">
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Contraseña</label>
+          <div class="password-container">
+            <input type="password" id="password" class="form-input" placeholder="••••••••" required aria-required="true">
+            <button type="button" class="toggle-password" onclick="togglePassword()" aria-label="Mostrar/ocultar contraseña">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-options">
+          <label class="remember-me">
+            <input type="checkbox" id="rememberMe">
+            <span>Recordarme</span>
+          </label>
+          <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
+        </div>
+
+        <button type="submit" class="login-button">
+          <span class="button-text">Iniciar Sesión</span>
+          <span class="button-loader" style="display: none;">⏳</span>
+        </button>
+      </form>
+
+      <div class="divider">
+        <span>o</span>
+      </div>
+
+      <div class="social-login">
+        <button class="social-button google" onclick="loginWithGoogle()" aria-label="Iniciar sesión con Google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Continuar con Google
+        </button>
+      </div>
+
+      <div class="register-link">
+        <p>¿No tienes una cuenta? <a href="register.html">Regístrate aquí</a></p>
+      </div>
+    </div>
+
+    <div class="login-features">
+      <div class="feature">
+        <div class="feature-icon">🔒</div>
+        <h3>Seguridad Garantizada</h3>
+        <p>Tus datos están protegidos con encriptación de nivel bancario</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📱</div>
+        <h3>Acceso Multiplataforma</h3>
+        <p>Disponible en todos tus dispositivos</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">⚡</div>
+        <h3>Rápido y Eficiente</h3>
+        <p>Gestiona tus finanzas en segundos</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    function togglePassword() {
+      const input = document.getElementById('password');
+      const btn = document.querySelector('.toggle-password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+    }
+
+    function loginWithGoogle() {
+      alert('Google Sign-In en desarrollo');
+    }
+  </script>
+</body>
+</html>

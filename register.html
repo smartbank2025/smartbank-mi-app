@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart/Bank - Registrarse</title>
+  <link rel="stylesheet" href="login.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-section">
+        <div class="logo">
+          <div class="logo-icon">$</div>
+        </div>
+        <h1 class="app-name">Crear Cuenta</h1>
+        <p class="app-subtitle">Comienza tu viaje financiero</p>
+      </div>
+
+      <form id="registerForm" class="login-form" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName" class="form-label">Nombre</label>
+            <input type="text" id="firstName" class="form-input" placeholder="Juan" required aria-required="true">
+          </div>
+          <div class="form-group">
+            <label for="lastName" class="form-label">Apellido</label>
+            <input type="text" id="lastName" class="form-input" placeholder="Pérez" required aria-required="true">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email" class="form-label">Correo Electrónico</label>
+          <input type="email" id="email" class="form-input" placeholder="tu@email.com" required aria-required="true">
+        </div>
+
+        <div class="form-group">
+          <label for="phone" class="form-label">Teléfono</label>
+          <input type="tel" id="phone" class="form-input" placeholder="+1 234 567 8900" required aria-required="true">
+        </div>
+
+        <div class="form-group">
+          <label for="password" class="form-label">Contraseña</label>
+          <div class="password-container">
+            <input type="password" id="password" class="form-input" placeholder="••••••••" required aria-required="true">
+            <button type="button" class="toggle-password" onclick="togglePassword('password')" aria-label="Mostrar/ocultar contraseña">👁️</button>
+          </div>
+          <div class="password-strength" id="passwordStrength"></div>
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword" class="form-label">Confirmar Contraseña</label>
+          <div class="password-container">
+            <input type="password" id="confirmPassword" class="form-input" placeholder="••••••••" required aria-required="true">
+            <button type="button" class="toggle-password" onclick="togglePassword('confirmPassword')" aria-label="Mostrar/ocultar contraseña">👁️</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="terms-checkbox">
+            <input type="checkbox" id="termsAccepted" required aria-required="true">
+            <span>Acepto los <a href="#" target="_blank">Términos y Condiciones</a> y la <a href="#" target="_blank">Política de Privacidad</a></span>
+          </label>
+        </div>
+
+        <button type="submit" class="login-button">
+          <span class="button-text">Crear Cuenta</span>
+          <span class="button-loader" style="display: none;">⏳</span>
+        </button>
+      </form>
+
+      <div class="divider">
+        <span>o</span>
+      </div>
+
+      <div class="social-login">
+        <button class="social-button google" onclick="loginWithGoogle()" aria-label="Registrarse con Google">
+          <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+          Registrarse con Google
+        </button>
+      </div>
+
+      <div class="register-link">
+        <p>¿Ya tienes una cuenta? <a href="login.html">Inicia sesión aquí</a></p>
+      </div>
+    </div>
+  </div>
+
+  <script src="auth.js"></script>
+  <script>
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      const btn = input.nextElementSibling;
+      input.type = input.type === 'password' ? 'text' : 'password';
+      btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+    }
+
+    function loginWithGoogle() {
+      alert('Google Sign-In en desarrollo');
+    }
+  </script>
+</body>
+</html>
