@@ -1,15 +1,6 @@
-/**
- * 🔐 AUTH.JS COMPLETO - SMART/BANK
- * ✅ Login/Register real con backend
- * ✅ Manejo de errores
- * ✅ Token JWT
- * ✅ Recordar usuario
- */
+// 📦 AUTH.JS ACTUALIZADO - CON REDIRECCIÓN COMPLETA
+const API_URL = 'https://tu-backend-url.onrender.com'; // ← Cambia por tu URL
 
-// 🌐 CONFIGURACIÓN - CAMBIA ESTO POR TU URL REAL
-const API_URL = 'https://smartbank-mi-app.onrender.com'; // ← IMPORTANTE: pon tu URL de Render
-
-// 📦 CLASE PRINCIPAL
 class AuthSystem {
   constructor() {
     this.currentUser = null;
@@ -17,19 +8,16 @@ class AuthSystem {
     this.init();
   }
 
-  // 🚀 INICIALIZAR
   init() {
     try {
-      // Si hay token, verificar usuario
       if (this.token) {
         this.currentUser = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || 'null');
         this.updateUI();
       }
       
-      // Configurar eventos
       this.setupEventListeners();
       
-      // Verificar autenticación en páginas protegidas
+      // 🔍 REDIRECCIÓN AUTOMÁTICA
       if (!window.location.pathname.includes('login') && 
           !window.location.pathname.includes('register') && 
           !this.token) {
@@ -41,31 +29,25 @@ class AuthSystem {
     }
   }
 
-  // 🎯 CONFIGURAR EVENTOS
   setupEventListeners() {
-    // Formulario de login
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
       loginForm.addEventListener('submit', (e) => this.handleLogin(e));
     }
 
-    // Formulario de registro
     const registerForm = document.getElementById('registerForm');
     if (registerForm) {
       registerForm.addEventListener('submit', (e) => this.handleRegister(e));
     }
 
-    // Botón de cerrar sesión
     const logoutBtn = document.querySelector('.logout-button');
     if (logoutBtn) {
       logoutBtn.addEventListener('click', () => this.logout());
     }
 
-    // Validar contraseña en tiempo real
     this.setupPasswordValidation();
   }
 
-  // 🔑 LOGIN
   async handleLogin(e) {
     e.preventDefault();
     
@@ -73,14 +55,8 @@ class AuthSystem {
     const password = document.getElementById('password')?.value;
     const rememberMe = document.getElementById('rememberMe')?.checked || false;
 
-    // Validaciones
     if (!email || !password) {
       this.showError('Por favor completa todos los campos');
-      return;
-    }
-
-    if (!this.validateEmail(email)) {
-      this.showError('Por favor ingresa un email válido');
       return;
     }
 
@@ -89,20 +65,17 @@ class AuthSystem {
 
       const response = await fetch(`${API_URL}/api/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Éxito ✅
+        // ✅ ÉXITO - Guardar todo
         this.token = data.token;
         this.currentUser = data.user;
         
-        // Guardar según "recordarme"
         if (rememberMe) {
           localStorage.setItem('token', data.token);
           localStorage.setItem('user', JSON.stringify(data.user));
@@ -111,6 +84,7 @@ class AuthSystem {
           sessionStorage.setItem('user', JSON.stringify(data.user));
         }
 
+        // 🚀 REDIRIGIR A LA APP COMPLETA
         this.showSuccess('¡Bienvenido! Redirigiendo...');
         
         setTimeout(() => {
@@ -118,7 +92,6 @@ class AuthSystem {
         }, 1000);
 
       } else {
-        // Error ❌
         this.showError(data.error || 'Credenciales inválidas');
       }
 
@@ -130,7 +103,6 @@ class AuthSystem {
     }
   }
 
-  // 📝 REGISTRO
   async handleRegister(e) {
     e.preventDefault();
     
@@ -142,24 +114,21 @@ class AuthSystem {
 
       const response = await fetch(`${API_URL}/api/register`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData)
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Éxito ✅
-        this.showSuccess('¡Cuenta creada exitosamente! Redirigiendo...');
+        // ✅ ÉXITO - Redirigir a login
+        this.showSuccess('¡Cuenta creada! Redirigiendo...');
         
         setTimeout(() => {
           window.location.href = 'login.html';
         }, 1500);
 
       } else {
-        // Error ❌
         this.showError(data.error || 'Error al crear cuenta');
       }
 
@@ -171,7 +140,6 @@ class AuthSystem {
     }
   }
 
-  // ✅ VALIDAR DATOS
   validateRegistrationData() {
     const firstName = document.getElementById('firstName')?.value.trim() || '';
     const lastName = document.getElementById('lastName')?.value.trim() || '';
@@ -181,7 +149,6 @@ class AuthSystem {
     const confirmPassword = document.getElementById('confirmPassword')?.value || '';
     const termsAccepted = document.getElementById('termsAccepted')?.checked || false;
 
-    // Validaciones
     if (!firstName || !lastName || !email || !phone || !password || !confirmPassword) {
       this.showError('Por favor completa todos los campos obligatorios');
       return null;
@@ -217,16 +184,13 @@ class AuthSystem {
     };
   }
 
-  // 📧 VALIDAR EMAIL
   validateEmail(email) {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return re.test(email);
   }
 
-  // 🔒 CERRAR SESIÓN
   logout(message = null) {
     try {
-      // Limpiar todo
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       sessionStorage.removeItem('token');
@@ -237,7 +201,6 @@ class AuthSystem {
 
       console.log('👋 Sesión cerrada' + (message ? `: ${message}` : ''));
       
-      // Redirigir
       if (!window.location.pathname.includes('login')) {
         window.location.href = 'login.html';
       }
@@ -246,12 +209,10 @@ class AuthSystem {
     }
   }
 
-  // 🔀 REDIRECCIONAR
   redirectToLogin() {
     window.location.href = 'login.html';
   }
 
-  // 🎨 ACTUALIZAR UI
   updateUI() {
     if (!this.currentUser) return;
 
@@ -267,7 +228,6 @@ class AuthSystem {
     }
   }
 
-  // 🔍 VALIDAR CONTRASEÑA
   setupPasswordValidation() {
     const passwordInput = document.getElementById('password');
     const strengthDiv = document.getElementById('passwordStrength');
@@ -281,7 +241,6 @@ class AuthSystem {
     });
   }
 
-  // 💪 CALCULAR FORTALEZA
   calculatePasswordStrength(password) {
     let strength = 0;
     
@@ -295,7 +254,6 @@ class AuthSystem {
     return Math.min(strength, 5);
   }
 
-  // 🎨 ACTUALIZAR UI FORTALEZA
   updatePasswordStrengthUI(strength, container) {
     const labels = ['Muy débil', 'Débil', 'Media', 'Fuerte', 'Muy fuerte'];
     const colors = ['#EF4444', '#F59E0B', '#F59E0B', '#10B981', '#059669'];
@@ -310,7 +268,6 @@ class AuthSystem {
     `;
   }
 
-  // ⏳ MOSTRAR CARGANDO
   showLoading(message = 'Cargando...') {
     const button = document.querySelector('.login-button .button-text');
     const loader = document.querySelector('.login-button .button-loader');
@@ -322,7 +279,6 @@ class AuthSystem {
     if (loader) loader.style.display = 'inline';
   }
 
-  // ✅ OCULTAR CARGANDO
   hideLoading() {
     const button = document.querySelector('.login-button .button-text');
     const loader = document.querySelector('.login-button .button-loader');
@@ -334,9 +290,7 @@ class AuthSystem {
     }
   }
 
-  // ❌ MOSTRAR ERROR
   showError(message) {
-    // Crear notificación temporal
     const notification = document.createElement('div');
     notification.style.cssText = `
       position: fixed;
@@ -352,15 +306,10 @@ class AuthSystem {
       animation: slideIn 0.3s ease;
     `;
     notification.textContent = '❌ ' + message;
-    
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.remove();
-    }, 4000);
+    setTimeout(() => notification.remove(), 4000);
   }
 
-  // ✅ MOSTRAR ÉXITO
   showSuccess(message) {
     const notification = document.createElement('div');
     notification.style.cssText = `
@@ -377,12 +326,8 @@ class AuthSystem {
       animation: slideIn 0.3s ease;
     `;
     notification.textContent = '✅ ' + message;
-    
     document.body.appendChild(notification);
-    
-    setTimeout(() => {
-      notification.remove();
-    }, 3000);
+    setTimeout(() => notification.remove(), 3000);
   }
 }
 
@@ -414,7 +359,7 @@ function checkAuth() {
   }
 }
 
-// 🚀 INICIALIZAR CUANDO SE CARGUE LA PÁGINA
+// 🚀 INICIALIZAR
 document.addEventListener('DOMContentLoaded', function () {
   try {
     window.authSystem = new AuthSystem();
@@ -424,35 +369,12 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 });
 
-// 🎨 CSS para notificaciones (agrega esto a tu styles.css)
+// 🎨 CSS para notificaciones
 const style = document.createElement('style');
 style.textContent = `
   @keyframes slideIn {
     from { transform: translateX(100%); opacity: 0; }
     to { transform: translateX(0); opacity: 1; }
-  }
-  
-  .password-strength-meter {
-    margin-top: 8px;
-  }
-  
-  .strength-bar {
-    width: 100%;
-    height: 4px;
-    background: #e5e7eb;
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  
-  .strength-fill {
-    height: 100%;
-    transition: width 0.3s ease;
-  }
-  
-  .strength-text {
-    font-size: 12px;
-    margin-top: 4px;
-    font-weight: 500;
   }
 `;
 document.head.appendChild(style);
