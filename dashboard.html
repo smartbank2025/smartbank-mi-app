@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart/Bank - Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+</head>
+<body>
+  <div class="app-container">
+    <nav class="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <div class="logo-icon">$</div>
+          <span class="logo-text">Smart/Bank</span>
+        </div>
+      </div>
+      <ul class="sidebar-menu">
+        <li class="menu-item active" data-tab="dashboard" onclick="switchTab('dashboard')">
+          <span class="menu-icon">📊</span>
+          <span class="menu-text" data-i18n="dashboard">Dashboard</span>
+        </li>
+        <li class="menu-item" data-tab="transactions" onclick="switchTab('transactions')">
+          <span class="menu-icon">💳</span>
+          <span class="menu-text" data-i18n="transactions">Transacciones</span>
+        </li>
+        <li class="menu-item" data-tab="categories" onclick="switchTab('categories')">
+          <span class="menu-icon">📂</span>
+          <span class="menu-text" data-i18n="categories">Categorías</span>
+        </li>
+        <li class="menu-item" data-tab="subscriptions" onclick="switchTab('subscriptions')">
+          <span class="menu-icon">🔄</span>
+          <span class="menu-text" data-i18n="subscriptions">Suscripciones</span>
+        </li>
+        <li class="menu-item" data-tab="banks" onclick="switchTab('banks')">
+          <span class="menu-icon">🏦</span>
+          <span class="menu-text" data-i18n="banks">Bancos</span>
+        </li>
+        <li class="menu-item" data-tab="settings" onclick="switchTab('settings')">
+          <span class="menu-icon">⚙️</span>
+          <span class="menu-text" data-i18n="settings">Configuración</span>
+        </li>
+      </ul>
+      <div class="sidebar-footer">
+        <div class="user-info">
+          <div class="user-avatar">
+            <span id="userInitials">JD</span>
+          </div>
+          <div class="user-details">
+            <span class="user-name" id="userName">Juan Díaz</span>
+            <span class="user-email" id="userEmail">juan@email.com</span>
+          </div>
+        </div>
+        <button class="logout-button" onclick="logout()" aria-label="Cerrar sesión">
+          <span class="logout-icon">🚪</span>
+          <span class="logout-text" data-i18n="logout">Cerrar Sesión</span>
+        </button>
+      </div>
+    </nav>
+
+    <main class="main-content">
+      <header class="header">
+        <div>
+          <h1 class="page-title" id="pageTitle" data-i18n="dashboard">Dashboard</h1>
+          <span class="page-subtitle" id="pageSubtitle" data-i18n="dashboardSubtitle">Resumen financiero</span>
+        </div>
+        <div class="header-right">
+          <div class="period-selector">
+            <select id="periodSelector" class="period-select" aria-label="Seleccionar período">
+              <option value="week" data-i18n="week">Semana</option>
+              <option value="month" selected data-i18n="month">Mes</option>
+              <option value="quarter" data-i18n="quarter">Trimestre</option>
+              <option value="year" data-i18n="year">Año</option>
+            </select>
+          </div>
+          <button class="language-button" onclick="toggleLanguage()" aria-label="Cambiar idioma">
+            🌐 ES
+          </button>
+          <button class="theme-button" onclick="toggleTheme()" aria-label="Cambiar tema">
+            🌙
+          </button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content active">
+          <div class="summary-cards">
+            <div class="summary-card balance">
+              <div class="card-icon">💰</div>
+              <div class="card-content">
+                <h3 data-i18n="totalBalance">Saldo Total</h3>
+                <p class="amount" id="totalBalance">$0.00</p>
+                <span class="trend positive" id="balanceTrend">+12% vs mes anterior</span>
+              </div>
+            </div>
+            <div class="summary-card income">
+              <div class="card-icon">📈</div>
+              <div class="card-content">
+                <h3 data-i18n="income">Ingresos</h3>
+                <p class="amount" id="totalIncome">$0.00</p>
+                <span class="period" data-i18n="thisMonth">Este mes</span>
+              </div>
+            </div>
+            <div class="summary-card expenses">
+              <div class="card-icon">📉</div>
+              <div class="card-content">
+                <h3 data-i18n="expenses">Gastos</h3>
+                <p class="amount" id="totalExpenses">$0.00</p>
+                <span class="period" data-i18n="thisMonth">Este mes</span>
+              </div>
+            </div>
+            <div class="summary-card savings">
+              <div class="card-icon">🎯</div>
+              <div class="card-content">
+                <h3 data-i18n="savingsRate">Tasa de Ahorro</h3>
+                <p class="amount" id="savingsRate">0.0%</p>
+                <span class="goal" data-i18n="savingsGoal">Meta: 20%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="quick-actions">
+            <button class="quick-action primary" onclick="showAddTransactionModal('income')" aria-label="Agregar ingreso">
+              <span class="quick-icon">💰</span>
+              <span class="quick-text" data-i18n="addIncome">Agregar Ingreso</span>
+            </button>
+            <button class="quick-action danger" onclick="showAddTransactionModal('expense')" aria-label="Agregar gasto">
+              <span class="quick-icon">💸</span>
+              <span class="quick-text" data-i18n="addExpense">Agregar Gasto</span>
+            </button>
+            <button class="quick-action secondary" onclick="generateQuickReport()" aria-label="Ver reporte">
+              <span class="quick-icon">📊</span>
+              <span class="quick-text" data-i18n="viewReport">Ver Reporte</span>
+            </button>
+            <button class="quick-action secondary" onclick="exportDashboardData('pdf')" aria-label="Exportar datos">
+              <span class="quick-icon">📥</span>
+              <span class="quick-text" data-i18n="exportData">Exportar Datos</span>
+            </button>
+            <button class="quick-action secondary" onclick="syncData()" aria-label="Sincronizar datos">
+              <span class="quick-icon">🔄</span>
+              <span class="quick-text" data-i18n="syncData">Sincronizar</span>
+            </button>
+          </div>
+
+          <div class="charts-grid">
+            <div class="chart-card">
+              <h3 data-i18n="cashFlow">Flujo de Caja Mensual</h3>
+              <div class="chart-container">
+                <canvas id="cashFlowChart" role="img" aria-label="Gráfico de flujo de caja"></canvas>
+              </div>
+            </div>
+            <div class="chart-card">
+              <h3 data-i18n="expensesByCategory">Gastos por Categoría</h3>
+              <div class="chart-container">
+                <canvas id="expensesChart" role="img" aria-label="Gráfico de gastos por categoría"></canvas>
+              </div>
+              <div class="chart-legend" id="expensesLegend" role="list" aria-label="Leyenda de gastos"></div>
+            </div>
+          </div>
+
+          <div class="budget-card">
+            <h3 data-i18n="budgetControl">Control de Presupuesto</h3>
+            <div class="budget-items" id="budgetItems" role="list" aria-label="Items de presupuesto"></div>
+          </div>
+        </div>
+
+        <!-- Transactions Tab -->
+        <div id="transactionsTab" class="tab-content">
+          <div class="transactions-header">
+            <h2 data-i18n="transactions">Estado de Cuenta Completo</h2>
+            <div class="transactions-actions">
+              <button class="export-button" onclick="exportTransactions()" aria-label="Exportar transacciones">
+                📥 <span data-i18n="export">Exportar</span>
+              </button>
+              <button class="add-button" onclick="showAddTransactionModal()" aria-label="Nueva transacción">
+                ➕ <span data-i18n="newTransaction">Nueva Transacción</span>
+              </button>
+              <button class="action-button secondary" onclick="importTransactions()" aria-label="Importar transacciones">
+                📤 <span data-i18n="import">Importar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="filters-card">
+            <div class="filter-row">
+              <div class="search-filter">
+                <input type="text" id="transactionSearch" placeholder="Buscar por descripción o categoría..." class="search-input" aria-label="Buscar transacciones">
+              </div>
+              <div class="filter-group">
+                <select id="periodFilter" class="filter-select" aria-label="Filtrar por período">
+                  <option value="7-days" data-i18n="7days">7 días</option>
+                  <option value="30-days" selected data-i18n="30days">30 días</option>
+                  <option value="90-days" data-i18n="90days">90 días</option>
+                  <option value="this-year" data-i18n="thisYear">Este año</option>
+                  <option value="custom" data-i18n="custom">Personalizado</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="typeFilter" class="filter-select" aria-label="Filtrar por tipo">
+                  <option value="all" data-i18n="all">Todas</option>
+                  <option value="income" data-i18n="income">Ingresos</option>
+                  <option value="expense" data-i18n="expense">Gastos</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="categoryFilter" class="filter-select" aria-label="Filtrar por categoría">
+                  <option value="all" data-i18n="allCategories">Todas las categorías</option>
+                </select>
+              </div>
+              <div class="filter-group">
+                <select id="bankFilter" class="filter-select" aria-label="Filtrar por banco">
+                  <option value="all" data-i18n="allBanks">Todos los bancos</option>
+                </select>
+              </div>
+            </div>
+            <div class="filter-summary" role="status" aria-live="polite">
+              <span data-i18n="period">Período:</span> <strong id="filterPeriod">30 días</strong>
+              <span data-i18n="transactions">Transacciones:</span> <strong id="transactionCount">0</strong>
+              <span data-i18n="income">Ingresos:</span> <strong id="filterIncome" class="positive">$0.00</strong>
+              <span data-i18n="expenses">Gastos:</span> <strong id="filterExpenses" class="negative">$0.00</strong>
+              <span data-i18n="balance">Balance:</span> <strong id="filterBalance">$0.00</strong>
+            </div>
+          </div>
+
+          <div class="transactions-list" id="transactionsList" role="list" aria-label="Lista de transacciones"></div>
+        </div>
+
+        <!-- Categories Tab -->
+        <div id="categoriesTab" class="tab-content">
+          <div class="categories-header">
+            <h2 data-i18n="categories">Categorías y Presupuestos</h2>
+            <div class="categories-actions">
+              <button class="action-button secondary" onclick="exportCategories()" aria-label="Exportar categorías">
+                📥 <span data-i18n="export">Exportar</span>
+              </button>
+              <button class="add-button" onclick="showAddCategoryModal()" aria-label="Nueva categoría">
+                ➕ <span data-i18n="newCategory">Nueva Categoría</span>
+              </button>
+            </div>
+          </div>
+          <div class="categories-grid" id="categoriesGrid" role="list" aria-label="Lista de categorías"></div>
+        </div>
+
+        <!-- Subscriptions Tab -->
+        <div id="subscriptionsTab" class="tab-content">
+          <div class="subscriptions-header">
+            <h2 data-i18n="subscriptions">Gestión de Suscripciones</h2>
+            <div class="subscriptions-actions">
+              <button class="action-button secondary" onclick="exportSubscriptions()" aria-label="Exportar suscripciones">
+                📥 <span data-i18n="export">Exportar</span>
+              </button>
+              <button class="add-button" onclick="showAddSubscriptionModal()" aria-label="Nueva suscripción">
+                ➕ <span data-i18n="newSubscription">Nueva Suscripción</span>
+              </button>
+            </div>
+          </div>
+          <div class="subscriptions-summary" role="region" aria-label="Resumen de suscripciones">
+            <div class="summary-item">
+              <span class="summary-label" data-i18n="totalSubscriptions">Total Suscripciones</span>
+              <span class="summary-value" id="totalSubscriptions">0</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label" data-i18n="monthlyTotal">Total Mensual</span>
+              <span class="summary-value" id="monthlySubscriptions">$0.00</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label" data-i18n="annualTotal">Total Anual</span>
+              <span class="summary-value" id="annualSubscriptions">$0.00</span>
+            </div>
+            <div class="summary-item">
+              <span class="summary-label" data-i18n="active">Activas</span>
+              <span class="summary-value" id="activeSubscriptions">0</span>
+            </div>
+          </div>
+          <div class="subscriptions-grid" id="subscriptionsGrid" role="list" aria-label="Lista de suscripciones"></div>
+        </div>
+
+        <!-- Banks Tab -->
+        <div id="banksTab" class="tab-content">
+          <div class="banks-header">
+            <h2 data-i18n="banks">Mis Bancos y Cuentas</h2>
+            <div class="banks-actions">
+              <button class="action-button secondary" onclick="showBankFilterModal()" aria-label="Filtrar bancos">
+                🔍 <span data-i18n="filter">Filtrar</span>
+              </button>
+              <button class="action-button primary" onclick="showAddBankModal()" aria-label="Agregar banco">
+                ➕ <span data-i18n="addBank">Agregar Banco</span>
+              </button>
+              <button class="action-button secondary" onclick="syncBanks()" aria-label="Sincronizar bancos">
+                🔄 <span data-i18n="syncBanks">Sincronizar</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="banks-overview">
+            <div class="overview-card">
+              <div class="overview-icon">🏦</div>
+              <div class="overview-content">
+                <span class="overview-label" data-i18n="totalBanks">Total Bancos</span>
+                <span class="overview-value" id="totalBanks">0</span>
+              </div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-icon">💰</div>
+              <div class="overview-content">
+                <span class="overview-label" data-i18n="totalBalance">Balance Total</span>
+                <span class="overview-value" id="totalBanksBalance">$0.00</span>
+              </div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-icon">✅</div>
+              <div class="overview-content">
+                <span class="overview-label" data-i18n="activeAccounts">Cuentas Activas</span>
+                <span class="overview-value" id="activeBanks">0</span>
+              </div>
+            </div>
+            <div class="overview-card">
+              <div class="overview-icon">📊</div>
+              <div class="overview-content">
+                <span class="overview-label" data-i18n="totalCurrencies">Total Monedas</span>
+                <span class="overview-value" id="totalCurrencies">0</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="banks-filters">
+            <div class="filter-group">
+              <label for="bankTypeFilter" data-i18n="accountType">Tipo de Cuenta</label>
+              <select id="bankTypeFilter" onchange="filterBanks()" aria-label="Filtrar por tipo de cuenta">
+                <option value="all" data-i18n="all">Todas</option>
+                <option value="checking" data-i18n="checking">Cuenta Corriente</option>
+                <option value="savings" data-i18n="savings">Cuenta de Ahorros</option>
+                <option value="credit" data-i18n="credit">Tarjeta de Crédito</option>
+                <option value="investment" data-i18n="investment">Cuenta de Inversión</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="bankStatusFilter" data-i18n="status">Estado</label>
+              <select id="bankStatusFilter" onchange="filterBanks()" aria-label="Filtrar por estado">
+                <option value="all" data-i18n="all">Todas</option>
+                <option value="active" data-i18n="active">Activas</option>
+                <option value="inactive" data-i18n="inactive">Inactivas</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="bankCurrencyFilter" data-i18n="currency">Moneda</label>
+              <select id="bankCurrencyFilter" onchange="filterBanks()" aria-label="Filtrar por moneda">
+                <option value="all" data-i18n="allCurrencies">Todas</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="MXN">MXN</option>
+                <option value="COP">COP</option>
+              </select>
+            </div>
+            <div class="filter-group">
+              <label for="bankSortFilter" data-i18n="sortBy">Ordenar por</label>
+              <select id="bankSortFilter" onchange="sortBanks()" aria-label="Ordenar bancos">
+                <option value="name" data-i18n="name">Nombre</option>
+                <option value="balance" data-i18n="balance">Saldo</option>
+                <option value="type" data-i18n="type">Tipo</option>
+                <option value="date" data-i18n="date">Fecha</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="banks-grid" id="banksGrid" role="list" aria-label="Lista de bancos"></div>
+
+          <div id="emptyBanksState" class="empty-state" style="display: none;">
+            <div class="empty-state-icon">🏦</div>
+            <h3 data-i18n="noBanks">No tienes bancos registrados</h3>
+            <p data-i18n="addFirstBank">Agrega tu primer banco para comenzar a gestionar tus cuentas financieras</p>
+            <button class="primary-button" onclick="showAddBankModal()" data-i18n="addBank">Agregar Banco</button>
+          </div>
+
+          <div class="banks-bulk-actions" id="bulkActions" style="display: none;">
+            <div class="bulk-actions-info">
+              <span id="selectedCount">0</span> <span data-i18n="banksSelected">bancos seleccionados</span>
+            </div>
+            <div class="bulk-actions-buttons">
+              <button class="action-button secondary" onclick="exportSelectedBanks()" aria-label="Exportar seleccionados">
+                📥 <span data-i18n="export">Exportar</span>
+              </button>
+              <button class="action-button warning" onclick="toggleSelectedBanksStatus()" aria-label="Cambiar estado">
+                🔄 <span data-i18n="changeStatus">Cambiar Estado</span>
+              </button>
+              <button class="action-button danger" onclick="deleteSelectedBanks()" aria-label="Eliminar seleccionados">
+                🗑️ <span data-i18n="delete">Eliminar</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="tab-content">
+          <h2 data-i18n="settings">Configuración</h2>
+          <div class="settings-grid">
+            <div class="settings-card">
+              <h3 data-i18n="profile">Perfil</h3>
+              <form id="profileForm" onsubmit="saveProfile(event)">
+                <div class="form-group">
+                  <label for="profileName" data-i18n="name">Nombre</label>
+                  <input type="text" id="profileName" class="form-input" required aria-required="true">
+                </div>
+                <div class="form-group">
+                  <label for="profileEmail" data-i18n="email">Correo</label>
+                  <input type="email" id="profileEmail" class="form-input" required aria-required="true">
+                </div>
+                <div class="form-group">
+                  <label for="profilePhone" data-i18n="phone">Teléfono</label>
+                  <input type="tel" id="profilePhone" class="form-input">
+                </div>
+                <button type="submit" class="save-button" data-i18n="saveChanges">Guardar Cambios</button>
+              </form>
+            </div>
+
+            <div class="settings-card">
+              <h3 data-i18n="financialGoals">Metas Financieras</h3>
+              <form id="goalsForm" onsubmit="saveGoals(event)">
+                <div class="form-group">
+                  <label for="savingsGoal" data-i18n="savingsGoalPercent">Meta de Ahorro Mensual (%)</label>
+                  <input type="number" id="savingsGoal" class="form-input" min="0" max="100" required>
+                </div>
+                <div class="form-group">
+                  <label for="emergencyFund" data-i18n="emergencyFund">Fondo de Emergencia ($)</label>
+                  <input type="number" id="emergencyFund" class="form-input" min="0">
+                </div>
+                <div class="form-group">
+                  <label for="monthlyBudget" data-i18n="monthlyBudget">Presupuesto Mensual ($)</label>
+                  <input type="number" id="monthlyBudget" class="form-input" min="0">
+                </div>
+                <button type="submit" class="save-button" data-i18n="updateGoals">Actualizar Metas</button>
+              </form>
+            </div>
+
+            <div class="settings-card">
+              <h3 data-i18n="preferences">Preferencias</h3>
+              <form id="preferencesForm" onsubmit="savePreferences(event)">
+                <div class="form-group">
+                  <label for="defaultCurrency" data-i18n="defaultCurrency">Moneda Predeterminada</label>
+                  <select id="defaultCurrency" class="form-input">
+                    <option value="USD">USD - Dólar Estadounidense</option>
+                    <option value="EUR">EUR - Euro</option>
+                    <option value="GBP">GBP - Libra Esterlina</option>
+                    <option value="MXN">MXN - Peso Mexicano</option>
+                    <option value="COP">COP - Peso Colombiano</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="dateFormat" data-i18n="dateFormat">Formato de Fecha</label>
+                  <select id="dateFormat" class="form-input">
+                    <option value="DD/MM/YYYY">DD/MM/YYYY</option>
+                    <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                    <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="enableNotifications">
+                    <span data-i18n="enableNotifications">Habilitar notificaciones</span>
+                  </label>
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="enableDarkMode">
+                    <span data-i18n="autoDarkMode">Modo oscuro automático</span>
+                  </label>
+                </div>
+                <button type="submit" class="save-button" data-i18n="savePreferences">Guardar Preferencias</button>
+              </form>
+            </div>
+
+            <div class="settings-card">
+              <h3 data-i18n="exportData">Exportar Datos</h3>
+              <p data-i18n="exportDataDesc">Exporta tus datos financieros para análisis externo o respaldo</p>
+              <div class="export-buttons">
+                <button class="export-button" onclick="exportData('csv')" aria-label="Exportar CSV">
+                  📄 <span data-i18n="exportCSV">Exportar CSV</span>
+                </button>
+                <button class="export-button" onclick="exportData('pdf')" aria-label="Exportar PDF">
+                  📋 <span data-i18n="exportPDF">Exportar PDF</span>
+                </button>
+                <button class="export-button" onclick="exportData('json')" aria-label="Exportar JSON">
+                  💾 <span data-i18n="exportJSON">Exportar JSON</span>
+                </button>
+              </div>
+            </div>
+
+            <div class="settings-card">
+              <h3 data-i18n="security">Seguridad</h3>
+              <form id="securityForm" onsubmit="saveSecuritySettings(event)">
+                <div class="form-group">
+                  <label for="currentPassword" data-i18n="currentPassword">Contraseña Actual</label>
+                  <input type="password" id="currentPassword" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label for="newPassword" data-i18n="newPassword">Nueva Contraseña</label>
+                  <input type="password" id="newPassword" class="form-input">
+                </div>
+                <div class="form-group">
+                  <label for="confirmNewPassword" data-i18n="confirmPassword">Confirmar Nueva Contraseña</label>
+                  <input type="password" id="confirmNewPassword" class="form-input">
+                </div>
+                <button type="submit" class="save-button" data-i18n="updatePassword">Actualizar Contraseña</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Overlay -->
+  <div id="modalOverlay" class="modal-overlay" onclick="closeModal()" role="presentation"></div>
+
+  <!-- Modal Agregar Transacción -->
+  <div id="addTransactionModal" class="modal" role="dialog" aria-labelledby="addTransactionTitle" aria-hidden="true">
+    <div class="modal-content">
+      <h3 id="addTransactionTitle" data-i18n="addTransaction">Agregar Nueva Transacción</h3>
+      <form id="addTransactionForm" onsubmit="addTransaction(event)" novalidate>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="transactionType" data-i18n="transactionType">Tipo de Transacción *</label>
+            <select id="transactionType" required aria-required="true" onchange="updateTransactionForm()">
+              <option value="" data-i18n="selectType">Seleccionar tipo</option>
+              <option value="income" data-i18n="income">💰 Ingreso</option>
+              <option value="expense" data-i18n="expense">💸 Gasto</option>
+              <option value="transfer" data-i18n="transfer">🔄 Transferencia</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="transactionAmount" data-i18n="amount">Monto *</label>
+            <input type="number" id="transactionAmount" step="0.01" min="0" required aria-required="true" placeholder="0.00">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="transactionCategory" data-i18n="category">Categoría *</label>
+            <select id="transactionCategory" required aria-required="true">
+              <option value="" data-i18n="selectCategory">Seleccionar categoría</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="transactionDate" data-i18n="date">Fecha *</label>
+            <input type="date" id="transactionDate" required aria-required="true">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="transactionDescription" data-i18n="description">Descripción *</label>
+          <input type="text" id="transactionDescription" required aria-required="true" placeholder="Ej: Supermercado, Salario, Gasolina...">
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="transactionMethod" data-i18n="paymentMethod">Método de Pago</label>
+            <select id="transactionMethod">
+              <option value="" data-i18n="selectMethod">Seleccionar método</option>
+              <option value="Transferencia" data-i18n="transfer">Transferencia</option>
+              <option value="Tarjeta de Crédito" data-i18n="creditCard">Tarjeta de Crédito</option>
+              <option value="Tarjeta de Débito" data-i18n="debitCard">Tarjeta de Débito</option>
+              <option value="Efectivo" data-i18n="cash">Efectivo</option>
+              <option value="Débito Automático" data-i18n="autoDebit">Débito Automático</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="transactionBank" data-i18n="bank">Banco</label>
+            <select id="transactionBank">
+              <option value="" data-i18n="selectBank">Seleccionar banco</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="transactionLocation" data-i18n="location">Ubicación</label>
+          <input type="text" id="transactionLocation" placeholder="Ej: Centro Comercial, Gasolinera...">
+        </div>
+
+        <div class="form-group">
+          <label for="transactionNotes" data-i18n="notes">Notas</label>
+          <textarea id="transactionNotes" rows="3" placeholder="Notas adicionales..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" onclick="closeModal()" data-i18n="cancel">Cancelar</button>
+          <button type="submit" class="save-button" data-i18n="addTransaction">Agregar Transacción</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Banco -->
+  <div id="addBankModal" class="modal" role="dialog" aria-labelledby="addBankTitle" aria-hidden="true">
+    <div class="modal-content">
+      <h3 id="addBankTitle" data-i18n="addBank">Agregar Nuevo Banco</h3>
+      <form id="addBankForm" onsubmit="addBank(event)" novalidate>
+        <div class="form-group">
+          <label for="bankName" data-i18n="bankName">Nombre del banco *</label>
+          <input type="text" id="bankName" placeholder="Ej: Banco Santander" required aria-required="true">
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="accountType" data-i18n="accountType">Tipo de cuenta *</label>
+            <select id="accountType" required aria-required="true">
+              <option value="checking" data-i18n="checking">Cuenta Corriente</option>
+              <option value="savings" data-i18n="savings">Cuenta de Ahorros</option>
+              <option value="credit" data-i18n="credit">Tarjeta de Crédito</option>
+              <option value="investment" data-i18n="investment">Cuenta de Inversión</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="bankBalance" data-i18n="initialBalance">Saldo inicial *</label>
+            <input type="number" id="bankBalance" step="0.01" min="0" placeholder="0.00" required aria-required="true">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="accountNumber" data-i18n="accountNumber">Número de cuenta</label>
+            <input type="text" id="accountNumber" placeholder="1234567890">
+          </div>
+          <div class="form-group">
+            <label for="bankCurrency" data-i18n="currency">Moneda</label>
+            <select id="bankCurrency">
+              <option value="USD">USD</option>
+              <option value="EUR">EUR</option>
+              <option value="GBP">GBP</option>
+              <option value="MXN">MXN</option>
+              <option value="COP">COP</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="bankColor" data-i18n="color">Color</label>
+            <input type="color" id="bankColor" value="#3B82F6">
+          </div>
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="isActive" checked>
+              <span data-i18n="isActive">¿Activa?</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" onclick="closeModal()" data-i18n="cancel">Cancelar</button>
+          <button type="submit" class="save-button" data-i18n="save">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Categoría -->
+  <div id="addCategoryModal" class="modal" role="dialog" aria-labelledby="addCategoryTitle" aria-hidden="true">
+    <div class="modal-content">
+      <h3 id="addCategoryTitle" data-i18n="addCategory">Agregar Nueva Categoría</h3>
+      <form id="addCategoryForm" onsubmit="addCategory(event)" novalidate>
+        <div class="form-group">
+          <label for="categoryName" data-i18n="categoryName">Nombre de la categoría *</label>
+          <input type="text" id="categoryName" placeholder="Ej: Alimentación" required aria-required="true">
+        </div>
+        <div class="form-group">
+          <label for="categoryBudget" data-i18n="monthlyBudget">Presupuesto mensual *</label>
+          <input type="number" id="categoryBudget" step="0.01" min="0" placeholder="0.00" required aria-required="true">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="categoryColor" data-i18n="color">Color</label>
+            <input type="color" id="categoryColor" value="#3B82F6">
+          </div>
+          <div class="form-group">
+            <label data-i18n="icon">Icono:</label>
+            <div id="iconSelector" class="icon-selector" role="group" aria-label="Selector de iconos"></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" onclick="closeModal()" data-i18n="cancel">Cancelar</button>
+          <button type="submit" class="save-button" data-i18n="save">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Agregar Suscripción -->
+  <div id="addSubscriptionModal" class="modal" role="dialog" aria-labelledby="addSubscriptionTitle" aria-hidden="true">
+    <div class="modal-content">
+      <h3 id="addSubscriptionTitle" data-i18n="addSubscription">Agregar Nueva Suscripción</h3>
+      <form id="addSubscriptionForm" onsubmit="addSubscription(event)" novalidate>
+        <div class="form-group">
+          <label for="subscriptionName" data-i18n="subscriptionName">Nombre de la suscripción *</label>
+          <input type="text" id="subscriptionName" placeholder="Ej: Netflix" required aria-required="true">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="subscriptionPrice" data-i18n="price">Precio *</label>
+            <input type="number" id="subscriptionPrice" step="0.01" min="0" placeholder="0.00" required aria-required="true">
+          </div>
+          <div class="form-group">
+            <label for="subscriptionCycle" data-i18n="billingCycle">Ciclo de facturación</label>
+            <select id="subscriptionCycle">
+              <option value="monthly" data-i18n="monthly">Mensual</option>
+              <option value="annual" data-i18n="annual">Anual</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="subscriptionNextPayment" data-i18n="nextPayment">Próximo pago *</label>
+          <input type="date" id="subscriptionNextPayment" required aria-required="true">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="subscriptionColor" data-i18n="color">Color</label>
+            <input type="color" id="subscriptionColor" value="#3B82F6">
+          </div>
+          <div class="form-group">
+            <label data-i18n="icon">Icono:</label>
+            <div id="subscriptionIconSelector" class="icon-selector" role="group" aria-label="Selector de iconos de suscripción"></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="cancel-button" onclick="closeModal()" data-i18n="cancel">Cancelar</button>
+          <button type="submit" class="save-button" data-i18n="save">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/transactions.js"></script>
+  <script src="js/categories.js"></script>
+  <script src="js/subscriptions.js"></script>
+  <script src="js/banks.js"></script>
+  <script src="js/funciones-botones.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/theme.js"></script>
+</body>
+</html>
