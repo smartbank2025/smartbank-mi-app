@@ -81,18 +81,14 @@
     </div>
   </div>
 
-  <script src="auth.js"></script>
-  <script>
-    function togglePassword() {
-      const input = document.getElementById('password');
-      const btn = document.querySelector('.toggle-password');
-      input.type = input.type === 'password' ? 'text' : 'password';
-      btn.textContent = input.type === 'password' ? '👁️' : '🙈';
-    }
-
-    function loginWithGoogle() {
-      alert('Google Sign-In en desarrollo');
-    }
-  </script>
+<script src="js/auth.js"></script>
+<script>
+  function togglePassword() {
+    const input = document.getElementById('password');
+    const btn = document.querySelector('.toggle-password');
+    input.type = input.type === 'password' ? 'text' : 'password';
+    btn.textContent = input.type === 'password' ? '👁️' : '🙈';
+  }
+</script>
 </body>
 </html>
